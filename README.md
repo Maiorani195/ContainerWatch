@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Shell Script" />
 </p>
 
-Ferramenta de observabilidade e auto-recuperação para containers Docker. Monitora continuamente múltiplos serviços, detecta falhas, tenta reiniciá-los automaticamente e registra todo o histórico de eventos em banco de dados — uma versão simplificada do que ferramentas como Kubernetes e Prometheus fazem em escala.
+Ferramenta de observabilidade e auto-recuperação para containers Docker. Monitora continuamente múltiplos serviços, detecta falhas, tenta reiniciá-los automaticamente e registra todo o histórico de eventos em banco de dados ,  uma versão simplificada do que ferramentas como Kubernetes e Prometheus fazem em escala.
 
 ## O que o sistema faz
 
