@@ -1,4 +1,3 @@
-# ContainerWatch
 # ContainerWatch: Monitoramento e Auto-recuperação de Containers
 
 <p>
@@ -10,27 +9,29 @@
 <img src="https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white" alt="Shell Script" />
 </p>
 
-Ferramenta de observabilidade e auto-recuperação para containers Docker. Monitora continuamente múltiplos serviços, detecta falhas, tenta reiniciá-los automaticamente e registra todo o histórico de eventos em banco de dados ,  uma versão simplificada do que ferramentas como Kubernetes e Prometheus fazem em escala.
+Ferramenta de observabilidade e auto-recuperação para containers Docker. Monitora continuamente múltiplos serviços, detecta falhas, tenta reiniciá-los automaticamente e registra todo o histórico de eventos em banco de dados — uma versão simplificada do que ferramentas como Kubernetes e Prometheus fazem em escala.
 
 ## O que o sistema faz
 
 Um conjunto de serviços roda em containers isolados. O ContainerWatch fica de fora, verificando a saúde de cada um continuamente. Quando um serviço cai:
 
-1. A falha é detectada em segundos
+1. A falha é detectada no ciclo seguinte do health check
 2. O sistema tenta reiniciar o container automaticamente
-3. O evento (queda, tentativa de restart, resultado) é persistido no banco via Spring Data JPA
-4. O histórico fica disponível para consulta via API REST
+3. O evento (queda, tentativa de restart, resultado) é persistido no banco via Spring Data JPA, através de uma API REST
+4. O histórico fica disponível para consulta
 
 ## Arquitetura
 
 ```
 docker-compose
-├── app          → Spring Boot + JPA, expõe /actuator/health e API de eventos
+├── app          → Spring Boot + JPA, API REST de serviços e eventos
 ├── db           → PostgreSQL, persistência dos eventos
-├── servico-1    → container monitorado (simulado)
-├── servico-2    → container monitorado (simulado)
-└── servico-3    → container monitorado (simulado)
+├── cw-servico-1 → container monitorado (simulado)
+├── cw-servico-2 → container monitorado (simulado)
+└── cw-servico-3 → container monitorado (simulado)
 ```
+
+Fora do Compose, os scripts Shell orquestram o ciclo de vida da aplicação e o monitoramento ativo dos containers.
 
 ## Modelo de dados
 
@@ -44,16 +45,25 @@ Servico (1) ────── (N) EventoMonitoramento
 
 **StatusServico** (enum): `UP`, `DOWN`, `REINICIANDO`, `FALHA_REINICIO`
 
+## API
+
+| Método | Rota | Função |
+|---|---|---|
+| GET | `/servicos` | Lista todos os serviços e status atual |
+| GET | `/eventos` | Histórico completo de eventos |
+| GET | `/eventos/{servicoId}` | Eventos de um serviço específico |
+| POST | `/eventos` | Registra um novo evento e atualiza o status do serviço |
+
 ## Scripts de automação
 
 | Script | Função |
 |---|---|
-| `build.sh` | builda a imagem da aplicação (Dockerfile multi-stage) |
-| `deploy.sh` | sobe todo o ambiente via Docker Compose, aguarda o health check antes de liberar o terminal |
-| `healthcheck.sh` | roda em loop verificando cada serviço monitorado; reinicia automaticamente o que estiver fora do ar e registra o evento |
-| `logwatch.sh` | agrega e filtra logs de todos os containers monitorados, destacando erros |
-| `backup.sh` | gera backup do banco (`pg_dump`) com timestamp |
-| `rollback.sh` | reverte para a imagem anterior se detectar instabilidade repetida após um deploy |
+| `build.sh` | Builda a imagem da aplicação (Dockerfile multi-stage) |
+| `deploy.sh` | Sobe todo o ambiente em segundo plano e aguarda o health check |
+| `healthcheck.sh` | Loop contínuo: verifica cada serviço, reinicia o que cair e registra o evento via API |
+| `logwatch.sh` | Agrega os logs de todos os containers em paralelo, destacando erros |
+| `backup.sh` | Gera backup do banco (`pg_dump`) com timestamp |
+| `rollback.sh` | Reverte para a imagem anterior da aplicação, com confirmação |
 
 ## Como executar
 
@@ -69,13 +79,19 @@ Para simular uma falha e observar a auto-recuperação em tempo real:
 docker stop cw-servico-1
 ```
 
+Para acompanhar os logs agregados:
+
+```bash
+./scripts/logwatch.sh
+```
+
 ## Decisões de projeto
 
-- **Multi-stage build no Dockerfile:** separa o ambiente de compilação (Maven completo) da imagem final (apenas JRE + `.jar`), resultando em uma imagem de produção bem mais enxuta.
-- **Sem front-end:** o foco do projeto é a automação de infraestrutura, não uma interface de usuário. A observação do sistema acontece via terminal, logs dos scripts e API REST — reflete como ferramentas reais desse tipo costumam ser consumidas.
-- **`ddl-auto=update`:** o Hibernate cria o schema automaticamente a partir das entidades, diferente da abordagem manual usada em projetos anteriores — opção consciente para um projeto desse porte.
-- **Senha do banco via variável de ambiente:** nunca versionada no `docker-compose.yml`, seguindo a mesma prática de segurança aplicada no projeto LogSentinel.
+- **Multi-stage build com Maven Wrapper:** o Dockerfile usa `eclipse-temurin:25-jdk` como base, em vez de uma imagem Maven pronta, porque não havia imagem oficial `maven` compatível com Java 25 no momento da construção do projeto. O `mvnw` baixa a versão certa do Maven dentro do próprio build.
+- **`@JsonIgnore` no relacionamento `Servico → eventos`:** evita um ciclo infinito de serialização JSON (evento referencia serviço, que referenciaria a lista de eventos de volta).
+- **Sem front-end:** o foco do projeto é a automação de infraestrutura. A observação acontece via terminal, scripts e API REST — reflete como ferramentas reais desse tipo costumam ser consumidas.
+- **Postgres em vez de SQLite:** diferente do projeto anterior (LogSentinel), aqui a aplicação já nasce distribuída entre containers, então um banco com servidor próprio (acessível pela rede do Compose) faz mais sentido que um banco em arquivo local.
 
 ## Status
 
-Em desenvolvimento.
+Concluído.
