@@ -92,6 +92,9 @@ Para acompanhar os logs agregados:
 - **Sem front-end:** o foco do projeto é a automação de infraestrutura. A observação acontece via terminal, scripts e API REST — reflete como ferramentas reais desse tipo costumam ser consumidas.
 - **Postgres em vez de SQLite:** diferente do projeto anterior (LogSentinel), aqui a aplicação já nasce distribuída entre containers, então um banco com servidor próprio (acessível pela rede do Compose) faz mais sentido que um banco em arquivo local.
 
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/5705b04b-e8be-4999-b2fe-66dd2d0ae586" />
+
+
 ## Status
 
 Concluído.
