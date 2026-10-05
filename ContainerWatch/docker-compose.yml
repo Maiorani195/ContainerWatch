@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: containerwatch
+      POSTGRES_USER: containerwatch
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U containerwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/containerwatch
+      SPRING_DATASOURCE_USERNAME: containerwatch
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "8080:8080"
+
+  servico-1:
+    image: nginx:alpine
+    container_name: cw-servico-1
+
+  servico-2:
+    image: nginx:alpine
+    container_name: cw-servico-2
+
+  servico-3:
+    image: nginx:alpine
+    container_name: cw-servico-3
+
+volumes:
+  db_data:
