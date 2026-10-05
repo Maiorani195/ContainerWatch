@@ -92,37 +92,8 @@ Para acompanhar os logs agregados:
 - **Sem front-end:** o foco do projeto é a automação de infraestrutura. A observação acontece via terminal, scripts e API REST — reflete como ferramentas reais desse tipo costumam ser consumidas.
 - **Postgres em vez de SQLite:** diferente do projeto anterior (LogSentinel), aqui a aplicação já nasce distribuída entre containers, então um banco com servidor próprio (acessível pela rede do Compose) faz mais sentido que um banco em arquivo local.
 
-graph TD
-    Scripts["🖥️ Shell Scripts<br/>(healthcheck.sh / automação)"]
 
-    subgraph "Docker Compose"
-        API["⚙️ ContainerWatch API<br/>(Spring Boot + JPA)"]
-        DB[("🗄️ PostgreSQL<br/>(Banco de Dados)")]
-        
-        subgraph "Containers Monitorados"
-            S1["📦 cw-servico-1<br/>(Nginx)"]
-            S2["📦 cw-servico-2<br/>(Nginx)"]
-            S3["📦 cw-servico-3<br/>(Nginx)"]
-        end
-    end
 
-    Scripts -- "1. Verifica Saúde (cURL)" --> S1
-    Scripts -. "Verifica" .-> S2
-    Scripts -. "Verifica" .-> S3
-    
-    Scripts -- "2. Detecta falha e<br/>chama API (POST)" --> API
-    
-    API -- "3. Grava evento" --> DB
-
-    classDef docker fill:#2496ED,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold;
-    classDef db fill:#336791,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold;
-    classDef spring fill:#6DB33F,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold;
-    classDef script fill:#2B2D42,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold;
-
-    class S1,S2,S3 docker;
-    class DB db;
-    class API spring;
-    class Scripts script;
 
 
 ## Status
